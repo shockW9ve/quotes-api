@@ -1,8 +1,8 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
-// using Quotes.Api.Contracts;
-// using Quotes.Api.Validation;
-// using Quotes.Api.Models;
+using Quotes.Api.Contracts;
+using Quotes.Api.Validation;
+using Quotes.Api.Models;
 // using Quotes.Api.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
