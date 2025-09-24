@@ -1,3 +1,3 @@
 namespace Quotes.Api.Models;
 
-public record Quote(Guid id, string Text, string Author, DateTimeOffset CreatedAt);
+public record Quote(Guid Id, string Text, string Author, DateTimeOffset CreatedAt);
