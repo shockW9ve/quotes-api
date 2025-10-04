@@ -1,11 +1,15 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.EntityFrameworkCore;
 using Quotes.Api.Contracts;
+using Quotes.Api.Data;
 using Quotes.Api.Validation;
 using Quotes.Api.Models;
 using Quotes.Api.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var connectionString = builder.Configuration.GetConnectionString("Default") ?? Environment.GetEnvironmentVariable("ConnectionStrings__Default");
 
 builder.Services.AddOpenApi();
 
@@ -13,8 +17,12 @@ builder.Services.AddOpenApi();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateQuoteRequestValidator>();
 
-// in-memory repo - todo replace with ef
-builder.Services.AddSingleton<IQuotesRepository, InMemoryRepository>();
+// in-memory repo
+// builder.Services.AddSingleton<IQuotesRepository, InMemoryRepository>();
+// ef core
+builder.Services.AddDbContext<QuotesDbContext>(options => options.UseNpgsql(connectionString));
+builder.Services.AddScoped<IQuotesRepository, EFQuotesRepository>();
+
 
 var app = builder.Build();
 
