@@ -24,6 +24,14 @@ public class QuotesApiFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+
+            var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<QuotesDbContext>));
+            if (descriptor is not null)
+            {
+                services.Remove(descriptor);
+            }
+
+            services.AddDbContext<QuotesDbContext>(option => option.UseNpgsql(_connectionString));
             // optional: ensure DB is created/migrated
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();

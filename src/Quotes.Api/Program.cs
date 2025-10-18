@@ -6,9 +6,17 @@ using Quotes.Api.Data;
 using Quotes.Api.Validation;
 using Quotes.Api.Models;
 using Quotes.Api.Storage;
+using Serilog;
+
+// serilog
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
 
+// connection string
 var connectionString = builder.Configuration.GetConnectionString("Default") ?? Environment.GetEnvironmentVariable("ConnectionStrings__Default");
 
 builder.Services.AddOpenApi();
@@ -23,6 +31,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateQuoteRequestValidator
 builder.Services.AddDbContext<QuotesDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddScoped<IQuotesRepository, EFQuotesRepository>();
 
+// opentelemetry
 
 var app = builder.Build();
 
