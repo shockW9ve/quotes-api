@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: quotes-api, namespace: quotes }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: quotes-api } }
+  template:
+    metadata: { labels: { app: quotes-api } }
+    spec:
+      containers:
+      - name: api
+        image: 'quotes-api:local' #ghcr.io/shockW9ve/quotes-api:sha-LOCAL   # or use 'quotes-api:local' and 'kind load docker-image'
+        imagePullPolicy: IfNotPresent   # or 'Never' for strictly local dev
+        ports: [{ containerPort: 8080 }]
+        env:
+        - name: ConnectionStrings__Default
+          value: "Host=postgres;Port=5432;Database=quotes_dev;Username=postgres;Password=postgres"
+        readinessProbe:
+          httpGet: { path: /ready, port: 8080 }
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet: { path: /health, port: 8080 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata: { name: quotes-api, namespace: quotes }
+spec:
+  selector: { app: quotes-api }
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+

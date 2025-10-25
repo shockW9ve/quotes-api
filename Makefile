@@ -39,3 +39,15 @@ compose-up:
 compose-down:
 	docker compose down -v
 
+.PHONY: kind-load k8s-apply
+
+kind-load:
+	docker build -t quotes-api:local .
+	kind load docker-image quotes-api:local --name quotes
+
+k8s-apply:
+	kubectl apply -f k8s/namespace.yaml
+	kubectl apply -f k8s/postgres.yaml
+	kubectl apply -f k8s/api.yaml
+	kubectl apply -f k8s/ingress.yaml
+

@@ -1,5 +1,5 @@
 # build
-FROM mcr.microsoft.com/dotnet/sdk:9.0 as build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 COPY ./Quotes.sln ./
 COPY ./src/Quotes.Api/Quotes.Api.csproj ./src/Quotes.Api/
