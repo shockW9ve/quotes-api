@@ -7,6 +7,10 @@ using Quotes.Api.Validation;
 using Quotes.Api.Models;
 using Quotes.Api.Storage;
 using Serilog;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Resources;
+using HealthChecks.NpgSql;
+
 
 // serilog
 Log.Logger = new LoggerConfiguration()
@@ -14,24 +18,40 @@ Log.Logger = new LoggerConfiguration()
     .CreateBootstrapLogger();
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Host.UseSerilog();
+builder.Host.UseSerilog((ctx, lc) => lc
+        .ReadFrom.Configuration(ctx.Configuration)
+        .WriteTo.Console());
 
 // connection string
 var connectionString = builder.Configuration.GetConnectionString("Default") ?? Environment.GetEnvironmentVariable("ConnectionStrings__Default");
-
-builder.Services.AddOpenApi();
-
-// fluentvalidation
-builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddValidatorsFromAssemblyContaining<CreateQuoteRequestValidator>();
 
 // in-memory repo
 // builder.Services.AddSingleton<IQuotesRepository, InMemoryRepository>();
 // ef core
 builder.Services.AddDbContext<QuotesDbContext>(options => options.UseNpgsql(connectionString));
-builder.Services.AddScoped<IQuotesRepository, EFQuotesRepository>();
+
+// healthcheck
+if (connectionString is not null)
+{
+    builder.Services.AddHealthChecks()
+        .AddNpgSql(connectionString, name: "postgres", tags: new[] { "ready" });
+}
 
 // opentelemetry
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService("quotes-api"))
+    .WithTracing(t => t
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddConsoleExporter());
+
+// fluentvalidation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateQuoteRequestValidator>();
+
+builder.Services.AddScoped<IQuotesRepository, EFQuotesRepository>();
+builder.Services.AddSerilog();
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
@@ -40,6 +60,11 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// map health endpoints
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/ready", new() { Predicate = r => r.Tags.Contains("ready") });
+
+// quotes endpoints
 app.MapGet("/quotes", async (IQuotesRepository repo) =>
         {
             var items = await repo.GetAllAsync();
@@ -58,6 +83,14 @@ app.MapPost("/quotes", async (CreateQuoteRequest req, IQuotesRepository repo, IV
             var created = await repo.CreateAsync(req.Text, req.Author);
             return Results.Created($"/quotes/{created.Id}", new QuoteResponse(created.Id, created.Text, created.Author, created.CreatedAt));
         });
+
+
+// apply migrations automatically on boot (works in compose/k8s)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<QuotesDbContext>();
+    db.Database.Migrate();
+}
 
 app.UseHttpsRedirection();
 
