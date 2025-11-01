@@ -1,0 +1,14 @@
+image:
+  repository: ghcr.io/shockw9ve/quotes-api
+  tag: latest
+  pullPolicy: IfNotPresent
+
+env:
+  connectionString: "Host=postgres;Port=5432;Database=quotes_dev;Username=postgres;Password=postgres"
+
+service:
+  port: 80
+
+ingress:
+  enabled: true
+  host: quotes.local

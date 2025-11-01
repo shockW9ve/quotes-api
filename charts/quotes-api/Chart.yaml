@@ -1,0 +1,5 @@
+apiVersion: v2
+name: quotes-api
+version: 0.1.0
+description: Quotes API deployment
+type: application

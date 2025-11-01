@@ -125,7 +125,7 @@ app.Use(async (ctx, next) =>
 app.UseRateLimiter();
 
 // cors
-app.UseCors();
+app.UseCors("ui");
 
 // unified error response
 app.UseExceptionHandler();
