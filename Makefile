@@ -21,6 +21,15 @@ clean:
 format:
 	dotnet format
 
+.PHONY: test-cov
+test-cov:
+	dotnet test tests/Quotes.Api.Tests/Quotes.Api.Tests.csproj \
+	  -c Release \
+	  /p:CollectCoverage=true \
+	  /p:CoverletOutputFormat=cobertura \
+	  /p:Threshold=80 \
+	  /p:ThresholdType=line
+
 .PHONY: docker-build docker-run docker-push
 
 docker-build:
