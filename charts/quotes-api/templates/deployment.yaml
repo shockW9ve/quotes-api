@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quotes-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: quotes-api }
+  template:
+    metadata:
+      labels: { app: quotes-api }
+    spec:
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports: [ { containerPort: 8080 } ]
+          env:
+            - name: ConnectionStrings__Default
+              value: "{{ .Values.env.connectionString }}"
+          readinessProbe:
+            httpGet: { path: /ready, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
